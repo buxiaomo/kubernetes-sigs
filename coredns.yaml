@@ -188,7 +188,7 @@ spec:
   clusterIP: 10.96.0.2
   ports:
   - name: dns
-    port: 53s
+    port: 53
     protocol: UDP
   - name: dns-tcp
     port: 53
