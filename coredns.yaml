@@ -225,7 +225,7 @@ spec:
         - /cluster-proportional-autoscaler
         - --namespace=kube-system
         - --configmap=dns-autoscaler
-        - --target=deployments/coredns
+        - --target=deployment/coredns
         # When cluster is using large nodes(with more cores), "coresPerReplica" should dominate.
         # If using small nodes, "nodesPerReplica" should dominate.
         - --default-params={"linear":{"coresPerReplica":256,"nodesPerReplica":16,"min":1}}
