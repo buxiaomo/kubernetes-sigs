@@ -1,0 +1,163 @@
+# https://docs.traefik.io/routing/providers/kubernetes-ingress/
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: kube-ingress
+spec:
+  finalizers:
+    - kubernetes
+status:
+  phase: Active
+
+---
+kind: ClusterRole
+apiVersion: rbac.authorization.k8s.io/v1beta1
+metadata:
+  name: traefik-ingress-controller
+rules:
+  - apiGroups:
+      - ""
+    resources:
+      - services
+      - endpoints
+      - secrets
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - extensions
+    resources:
+      - ingresses
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - extensions
+    resources:
+      - ingresses/status
+    verbs:
+      - update
+  - apiGroups:
+      - extensions
+      - networking.k8s.io
+    resources:
+      - ingresses
+      - ingressclasses
+    verbs:
+      - get
+      - list
+      - watch
+
+---
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1beta1
+metadata:
+  name: traefik-ingress-controller
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: traefik-ingress-controller
+subjects:
+  - kind: ServiceAccount
+    name: traefik-ingress-controller
+    namespace: kube-ingress
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: traefik
+  namespace: kube-ingress
+spec:
+  selector:
+    app: traefik
+  type: NodePort
+  ports:
+    - name: web
+      port: 80
+      targetPort: 80
+      nodePort: 30001
+    - name: websecure
+      port: 443
+      targetPort: 443
+      nodePort: 30002
+    - name: admin
+      port: 8080
+      targetPort: 8080
+
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: traefik-ingress-controller
+  namespace: kube-ingress
+
+---
+kind: DaemonSet
+apiVersion: apps/v1
+metadata:
+  name: traefik
+  namespace: kube-ingress
+  labels:
+    app: traefik
+spec:
+  selector:
+    matchLabels:
+      app: traefik
+  template:
+    metadata:
+      labels:
+        app: traefik
+    spec:
+      tolerations:
+        - key: CriticalAddonsOnly
+          operator: Exists
+        - effect: NoSchedule
+          key: node-role.kubernetes.io/master
+      serviceAccountName: traefik-ingress-controller
+      terminationGracePeriodSeconds: 1
+      containers:
+        - name: traefik
+          image: traefik:v2.4
+          args:
+            - --log.level=INFO
+            - --api
+            - --api.insecure
+            - --entrypoints.web.address=:80
+            - --entrypoints.websecure.address=:443
+            - --providers.kubernetesingress.ingressclass=traefik
+            - --accesslog=true
+            - --accesslog.format=json
+          ports:
+            - name: web
+              containerPort: 80
+            - name: websecure
+              containerPort: 443
+            - name: admin
+              containerPort: 8080
+          resources:
+            limits:
+              cpu: 2000m
+              memory: 1024Mi
+            requests:
+              cpu: 1000m
+              memory: 1024Mi
+
+---
+kind: Ingress
+apiVersion: networking.k8s.io/v1beta1
+metadata:
+  name: traefik-dashboard
+  namespace: kube-ingress
+spec:
+  rules:
+    - host: traefik.example.in
+      http:
+        paths:
+          - path: /
+            backend:
+              serviceName: traefik
+              servicePort: 8080
