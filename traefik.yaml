@@ -91,7 +91,7 @@ metadata:
   namespace: kube-ingress
 
 ---
-kind: DaemonSet
+kind: Deployment
 apiVersion: apps/v1
 metadata:
   name: traefik
@@ -124,6 +124,7 @@ spec:
             - --entrypoints.web.address=:80
             - --entrypoints.websecure.address=:443
             - --providers.kubernetesingress.ingressclass=traefik
+            - --providers.kubernetesingress=true
             - --accesslog=true
             - --accesslog.format=json
           ports:
@@ -142,17 +143,22 @@ spec:
               memory: 1024Mi
 
 ---
+apiVersion: networking.k8s.io/v1
 kind: Ingress
-apiVersion: networking.k8s.io/v1beta1
 metadata:
   name: traefik-dashboard
   namespace: kube-ingress
+  annotations:
+    kubernetes.io/ingress.class: traefik
 spec:
   rules:
     - host: traefik.example.in
       http:
         paths:
-          - path: /
+          - pathType: Prefix
+            path: /
             backend:
-              serviceName: traefik
-              servicePort: 8080
+              service:
+                name: traefik
+                port:
+                  number: 8080
