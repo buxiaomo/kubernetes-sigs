@@ -91,7 +91,7 @@ metadata:
   namespace: kube-ingress
 
 ---
-kind: Deployment
+kind: DaemonSet
 apiVersion: apps/v1
 metadata:
   name: traefik
