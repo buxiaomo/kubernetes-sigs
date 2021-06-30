@@ -116,7 +116,7 @@ spec:
       terminationGracePeriodSeconds: 1
       containers:
         - name: traefik
-          image: traefik:v2.4
+          image: traefik:v2.4.9
           args:
             - --log.level=INFO
             - --api
