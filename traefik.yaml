@@ -23,8 +23,10 @@ rules:
       - watch
   - apiGroups:
       - extensions
+      - networking.k8s.io
     resources:
       - ingresses
+      - ingressclasses
     verbs:
       - get
       - list
@@ -35,16 +37,6 @@ rules:
       - ingresses/status
     verbs:
       - update
-  - apiGroups:
-      - extensions
-      - networking.k8s.io
-    resources:
-      - ingresses
-      - ingressclasses
-    verbs:
-      - get
-      - list
-      - watch
 
 ---
 kind: ClusterRoleBinding
