@@ -4,29 +4,30 @@ kind: Namespace
 metadata:
   name: kube-ingress
 
----
-# Source: traefik/templates/dashboard-hook-ingressroute.yaml
-apiVersion: traefik.containo.us/v1alpha1
-kind: IngressRoute
-metadata:
-  name: traefik-dashboard
-  namespace: kube-ingress
-  annotations:
-    helm.sh/hook: "post-install,post-upgrade"
-  labels:
-    app.kubernetes.io/name: traefik
-    helm.sh/chart: traefik-10.3.2
-    app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/instance: traefik
-spec:
-  entryPoints:
-    - traefik
-  routes:
-  - match: PathPrefix(`/dashboard`) || PathPrefix(`/`)
-    kind: Rule
-    services:
-    - name: api@internal
-      kind: TraefikService
+# ---
+# # Source: traefik/templates/dashboard-hook-ingressroute.yaml
+# apiVersion: traefik.containo.us/v1alpha1
+# kind: IngressRoute
+# metadata:
+#   name: traefik-dashboard
+#   namespace: kube-ingress
+#   annotations:
+#     helm.sh/hook: "post-install,post-upgrade"
+#   labels:
+#     app.kubernetes.io/name: traefik
+#     helm.sh/chart: traefik-10.3.2
+#     app.kubernetes.io/managed-by: Helm
+#     app.kubernetes.io/instance: traefik
+# spec:
+#   entryPoints:
+#     - traefik
+#   routes:
+#   - match: PathPrefix(`/dashboard`) || PathPrefix(`/`)
+#     kind: Rule
+#     services:
+#     - name: api@internal
+#       kind: TraefikService
+
 ---
 apiVersion: networking.k8s.io/v1
 kind: Ingress
