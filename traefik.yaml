@@ -142,7 +142,7 @@ subjects:
 ---
 # Source: traefik/templates/deployment.yaml
 apiVersion: apps/v1
-kind: Deployment
+kind: DaemonSet
 metadata:
   name: traefik
   namespace: kube-ingress
