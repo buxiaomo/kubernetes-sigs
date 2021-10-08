@@ -153,7 +153,6 @@ metadata:
     app.kubernetes.io/instance: traefik
   annotations:
 spec:
-  replicas: 2
   selector:
     matchLabels:
       app.kubernetes.io/name: traefik
