@@ -222,7 +222,6 @@ spec:
           - name: tmp
             mountPath: /tmp
         args:
-          - "--global.checknewversion"
           - "--global.sendanonymoususage"
           - "--entryPoints.metrics.address=:9100/tcp"
           - "--entryPoints.traefik.address=:9000/tcp"
@@ -241,7 +240,6 @@ spec:
           - "--log=true"
           - "--log.format=json"
           - "--log.level=ERROR"
-          # - "--providers.kubernetescrd"
       volumes:
         - name: data
           emptyDir: {}
