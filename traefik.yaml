@@ -227,8 +227,6 @@ spec:
           - "--entryPoints.traefik.address=:9000/tcp"
           - "--entryPoints.web.address=:8000/tcp"
           - "--entryPoints.websecure.address=:8443/tcp"
-          - "--entrypoints.web.http.redirections.entryPoint.to=websecure"
-          - "--entrypoints.web.http.redirections.entryPoint.scheme=https"
           - "--api=true"
           - "--api.dashboard=true"
           - "--api.debug=true"
