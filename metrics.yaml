@@ -36,14 +36,11 @@ rules:
 - apiGroups:
   - ""
   resources:
-  - nodes/metrics
-  verbs:
-  - get
-- apiGroups:
-  - ""
-  resources:
   - pods
   - nodes
+  - nodes/stats
+  - namespaces
+  - configmaps
   verbs:
   - get
   - list
@@ -119,27 +116,17 @@ metadata:
   name: metrics-server
   namespace: kube-system
 spec:
-  replicas: 2
   selector:
     matchLabels:
       k8s-app: metrics-server
   strategy:
     rollingUpdate:
-      maxUnavailable: 1
+      maxUnavailable: 0
   template:
     metadata:
       labels:
         k8s-app: metrics-server
     spec:
-      affinity:
-        podAntiAffinity:
-          requiredDuringSchedulingIgnoredDuringExecution:
-          - labelSelector:
-              matchLabels:
-                k8s-app: metrics-server
-            namespaces:
-            - kube-system
-            topologyKey: kubernetes.io/hostname
       containers:
       - args:
         - --cert-dir=/tmp
@@ -148,7 +135,7 @@ spec:
         - --kubelet-use-node-status-port
         - --metric-resolution=15s
         - --kubelet-insecure-tls
-        image: k8s.gcr.io/metrics-server/metrics-server:v0.6.0
+        image: k8s.gcr.io/metrics-server/metrics-server:v0.5.2
         imagePullPolicy: IfNotPresent
         livenessProbe:
           failureThreshold: 3
@@ -175,7 +162,6 @@ spec:
             cpu: 100m
             memory: 200Mi
         securityContext:
-          allowPrivilegeEscalation: false
           readOnlyRootFilesystem: true
           runAsNonRoot: true
           runAsUser: 1000
@@ -189,17 +175,6 @@ spec:
       volumes:
       - emptyDir: {}
         name: tmp-dir
----
-apiVersion: policy/v1beta1
-kind: PodDisruptionBudget
-metadata:
-  name: metrics-server
-  namespace: kube-system
-spec:
-  minAvailable: 1
-  selector:
-    matchLabels:
-      k8s-app: metrics-server
 ---
 apiVersion: apiregistration.k8s.io/v1
 kind: APIService
