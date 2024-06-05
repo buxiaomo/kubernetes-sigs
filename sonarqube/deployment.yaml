@@ -1,0 +1,68 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sonarqube
+  labels:
+    app: sonarqube
+spec:
+  replicas: 1
+  strategy: 
+    type: Recreate
+  selector:
+    matchLabels:
+      app: sonarqube
+  template:
+    metadata:
+      labels:
+        app: sonarqube
+    spec:
+      volumes:
+        - name: sonarqube-vol
+          persistentVolumeClaim:
+            claimName: ruoyi
+      containers:
+        - name: sonarqube
+          image: sonarqube:9.9.0-community
+          imagePullPolicy: Always
+          volumeMounts:
+            - name: sonarqube-vol
+              subPath: sonarqube-vol/data
+              mountPath: /opt/sonarqube/data
+            - name: sonarqube-vol
+              subPath: sonarqube-vol/extensions
+              mountPath: /opt/sonarqube/extensions
+            - name: sonarqube-vol
+              subPath: sonarqube-vol/logs
+              mountPath: /opt/sonarqube/logs
+          ports:
+            - name: tcp
+              containerPort: 9000
+              protocol: TCP
+          livenessProbe:
+            initialDelaySeconds: 90
+            periodSeconds: 5
+            timeoutSeconds: 5
+            tcpSocket:
+              port: 9000
+          readinessProbe:
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            timeoutSeconds: 5
+            tcpSocket:
+              port: 9000
+          env:
+            - name: TZ
+              value: "Asia/Shanghai"
+            - name: SONAR_JDBC_URL
+              value: "jdbc:postgresql://postgresql:5432/sonar"
+            - name: SONAR_JDBC_USERNAME
+              value: "sonar"
+            - name: SONAR_JDBC_PASSWORD
+              value: "sonar"
+          # resources:
+          #   limits:
+          #     cpu: "2"
+          #     memory: "2Gi"
+          #   requests:
+          #     cpu: "1"
+          #     memory: "512Mi"

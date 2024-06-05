@@ -1,0 +1,21 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: gitlab
+spec:
+  type: NodePort
+  selector:
+    app: gitlab
+  ports:
+    - name: tcp-443
+      port: 443
+      targetPort: 443
+      protocol: TCP
+    - name: tcp-80
+      port: 80
+      targetPort: 80
+      protocol: TCP
+    - name: tcp-22
+      port: 22
+      targetPort: 22
+      protocol: TCP

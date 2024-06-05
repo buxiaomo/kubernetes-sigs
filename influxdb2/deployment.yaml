@@ -1,0 +1,70 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: influxdb2
+  labels:
+    app: influxdb2
+spec:
+  replicas: 1
+  strategy: 
+    type: Recreate
+  selector:
+    matchLabels:
+      app: influxdb2
+  template:
+    metadata:
+      labels:
+        app: influxdb2
+    spec:
+      volumes:
+        - name: influxdb2-vol
+          persistentVolumeClaim:
+            claimName: switch-dev
+      containers:
+        - name: influxdb2
+          image: influxdb:2.0-alpine
+          imagePullPolicy: Always
+          volumeMounts:
+            - name: influxdb2-vol
+              subPath: influxdb2-vol
+              mountPath: /var/lib/influxdb2
+          ports:
+            - name: tcp
+              containerPort: 8086
+              protocol: TCP
+          livenessProbe:
+            initialDelaySeconds: 90
+            periodSeconds: 10
+            timeoutSeconds: 1
+            httpGet:
+              path: /influxdb/v2.0/api/health
+              port: 8086
+          readinessProbe:
+            initialDelaySeconds: 90
+            periodSeconds: 10
+            timeoutSeconds: 1
+            httpGet:
+              path: /influxdb/v2.0/api/health
+              port: 8086
+          env:
+            - name: TZ
+              value: "Asia/Shanghai"
+            - name: DOCKER_INFLUXDB_INIT_MODE
+              value: "setup"
+            - name: DOCKER_INFLUXDB_INIT_USERNAME
+              value: "admin"
+            - name: DOCKER_INFLUXDB_INIT_PASSWORD
+              value: "password"
+            - name: DOCKER_INFLUXDB_INIT_ORG
+              value: "NuoMi"
+            - name: DOCKER_INFLUXDB_INIT_BUCKET
+              value: "switch"
+            - name: DOCKER_INFLUXDB_INIT_ADMIN_TOKEN
+              value: "aidoTah6rit7aetheiph5zom1t"
+          resources:
+            limits:
+              cpu: "2"
+              memory: "1Gi"
+            requests:
+              cpu: "1"
+              memory: "512Mi"

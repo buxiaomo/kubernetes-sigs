@@ -1,0 +1,62 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mariadb
+  namespace: epub-dev
+  labels:
+    app: mariadb
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: mariadb
+  template:
+    metadata:
+      labels:
+        app: mariadb
+    spec:
+      volumes:
+        - name: mariadb-vol
+          persistentVolumeClaim:
+            claimName: epub-dev
+        - name: mariadb
+          configMap:
+            defaultMode: 0755
+            name: mariadb
+      tolerations:
+        - operator: Exists
+          effect: NoSchedule
+      containers:
+        - name: mariadb
+          image: mariadb:10.7.3-focal
+          imagePullPolicy: Always
+          volumeMounts:
+            - name: mariadb-vol
+              subPath: mariadb-vol
+              mountPath: /var/lib/mysql
+            - name: mariadb
+              mountPath: /etc/mysql/conf.d/mysqld.cnf
+              subPath: mysqld.cnf
+          ports:
+            - name: tcp
+              containerPort: 3306
+              protocol: TCP
+          livenessProbe:
+            initialDelaySeconds: 90
+            periodSeconds: 5
+            timeoutSeconds: 5
+            tcpSocket:
+              port: 3306
+          readinessProbe:
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            timeoutSeconds: 5
+            tcpSocket:
+              port: 3306
+          env:
+            - name: TZ
+              value: "Asia/Shanghai"
+            - name: MARIADB_ROOT_PASSWORD
+              value: "aiwu7af1uX"

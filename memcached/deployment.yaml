@@ -1,0 +1,47 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: memcached
+  labels:
+    app: memcached
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: memcached
+  template:
+    metadata:
+      labels:
+        app: memcached
+    spec:
+      volumes:
+        - name: memcached-vol
+          persistentVolumeClaim:
+            claimName: infra
+      containers:
+        - name: memcached
+          image: memcached:1.6.19-alpine
+          imagePullPolicy: Always
+          volumeMounts:
+            - name: memcached-vol
+              subPath: memcached-vol
+              mountPath: /data
+          ports:
+            - name: tcp-11211
+              containerPort: 11211
+              protocol: TCP
+          livenessProbe:
+            initialDelaySeconds: 90
+            periodSeconds: 5
+            timeoutSeconds: 5
+            tcpSocket:
+              port: 11211
+          readinessProbe:
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            timeoutSeconds: 5
+            tcpSocket:
+              port: 11211
+          env:
+            - name: TZ
+              value: "Asia/Shanghai"

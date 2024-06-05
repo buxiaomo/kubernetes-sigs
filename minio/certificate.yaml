@@ -1,0 +1,12 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: minio.nuomi.io
+  namespace: phoenix-dev
+spec:
+  dnsNames:
+    - minio.nuomi.io
+  secretName: minio.nuomi.io
+  issuerRef:
+    name: letsencrypt-prod
+    kind: ClusterIssuer

@@ -1,0 +1,205 @@
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: jenkins-swarm-auth
+type: kubernetes.io/basic-auth
+stringData:
+  username: admin
+  password: admin
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: buildkitd
+data:
+  buildkitd.toml: |-
+    debug = false
+    [log]
+      format = "json"
+    [registry."172.16.115.11:5000"]
+      http = true
+
+---
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: jenkins-swarm
+  labels:
+    app: jenkins-swarm
+spec:
+  selector:
+    matchLabels:
+      app: jenkins-swarm
+  template:
+    metadata:
+      labels:
+        app: jenkins-swarm
+    spec:
+      restartPolicy: Always
+      volumes:
+        - name: buildkitd
+          configMap:
+            defaultMode: 0755
+            name: buildkitd
+        - name: var-run
+          emptyDir: {}
+        - name: run-containerd
+          emptyDir: {}
+        - name: run-buildkit
+          emptyDir: {}
+        - name: dockerd-vol
+          hostPath:
+            path: /data/dockerd
+            type: DirectoryOrCreate
+        - name: jenkins-swarm-vol
+          hostPath:
+            path: /data/jenkins-swarm
+            type: DirectoryOrCreate
+        - name: buildkitd-vol
+          hostPath:
+            path: /data/buildkitd
+            type: DirectoryOrCreate
+      nodeSelector:
+        jenkins: "true"
+      initContainers:
+        - name: rm-buildkitd-locak-file
+          image: busybox:1.36.0
+          volumeMounts:
+            - name: buildkitd-vol
+              mountPath: /var/lib/buildkit
+          command: ["sh", "-c", "rm -rf /var/lib/buildkit/buildkitd.lock"]
+      containers:
+        - name: dockerd
+          image: docker:26.1.2-dind
+          args:
+            - "--insecure-registry"
+            - "172.16.115.11:5000"
+            - "--log-level"
+            - "error"
+            - "--log-format"
+            - "json"
+          tty: true
+          securityContext:
+            privileged: true
+            allowPrivilegeEscalation: true
+          ports:
+            - name: dind-con-port
+              containerPort: 2376
+              protocol: TCP
+          volumeMounts:
+            - name: dockerd-vol
+              mountPath: /var/lib/docker
+            - name: jenkins-swarm-vol
+              mountPath: /data/jenkins-swarm
+            - name: var-run
+              mountPath: /var/run
+            - name: run-containerd
+              mountPath: /var/run/docker/containerd
+          # readinessProbe:
+          #   initialDelaySeconds: 5
+          #   periodSeconds: 5
+          #   exec:
+          #     command:
+          #       - "docker"
+          #       - "-H"
+          #       - "unix:///var/run/docker.sock"
+          #       - "ps"
+          # livenessProbe:
+          #   initialDelaySeconds: 5
+          #   periodSeconds: 3
+          #   exec:
+          #     command:
+          #       - "docker"
+          #       - "-H"
+          #       - "unix:///var/run/docker.sock"
+          #       - "ps"
+        - name: buildkitd
+          image: moby/buildkit:v0.13.2
+          args:
+            - buildctl
+            - unix:///run/buildkit/buildkitd.sock
+            - --addr
+            - tcp://0.0.0.0:1234
+            - --debug
+          securityContext:
+            privileged: true
+          ports:
+            - containerPort: 1234
+          volumeMounts:
+            - name: buildkitd-vol
+              mountPath: /var/lib/buildkit
+            - name: run-buildkit
+              mountPath: /run/buildkit
+            - name: buildkitd
+              mountPath: /etc/buildkit/buildkitd.toml
+              subPath: buildkitd.toml
+          # readinessProbe:
+          #   initialDelaySeconds: 15
+          #   periodSeconds: 30
+          #   exec:
+          #     command:
+          #       - buildctl
+          #       - debug
+          #       - workers
+          # livenessProbe:
+          #   initialDelaySeconds: 15
+          #   periodSeconds: 30
+          #   exec:
+          #     command:
+          #       - buildctl
+          #       - debug
+          #       - workers
+        - name: jenkins-swarm
+          image: buxiaomo/jenkins-swarm:3.46
+          imagePullPolicy: Always
+          volumeMounts:
+            - name: jenkins-swarm-vol
+              mountPath: /data/jenkins-swarm
+            - name: var-run
+              mountPath: /var/run
+            - name: run-containerd
+              mountPath: /run/containerd
+            - name: run-buildkit
+              mountPath: /run/buildkit
+          livenessProbe:
+            httpGet:
+              path: /prometheus
+              port: 8080
+            initialDelaySeconds: 5
+            periodSeconds: 30
+            failureThreshold: 10
+          readinessProbe:
+            httpGet:
+              path: /prometheus
+              port: 8080
+            initialDelaySeconds: 5
+            periodSeconds: 30
+            failureThreshold: 10
+          env:
+            - name: AGENT_NAME
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.name
+            - name: JENKINS_USER
+              valueFrom:
+                secretKeyRef:
+                  key: username
+                  name: jenkins-swarm-auth
+            - name: JENKINS_PASS
+              valueFrom:
+                secretKeyRef:
+                  key: password
+                  name: jenkins-swarm-auth
+            - name: JENKINS_MASTER
+              value: http://jenkins:8080/jenkins
+            - name: JENKINS_OPTS
+              value: "-prometheusPort 8080 -disableSslVerification -noRetryAfterConnected"
+            - name: JENKINS_EXECUTORS
+              value: "2"
+            - name: GIT_SSL_NO_VERIFY
+              value: "true"
+            - name: JAVA_OPTS
+              value: "-Duser.timezone=Asia/Shanghai"

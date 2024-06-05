@@ -1,0 +1,40 @@
+# /data/infra *(rw,sync,no_root_squash,no_all_squash,no_subtree_check)
+# helm repo add nfs-subdir-external-provisioner https://kubernetes-sigs.github.io/nfs-subdir-external-provisioner/
+# helm upgrade -i  nfs-subdir-external-provisioner nfs-subdir-external-provisioner/nfs-subdir-external-provisioner \
+# --set nfs.server=192.168.50.81 \
+# --set nfs.path=/data/nfs -n kube-system
+# exportfs -r
+
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: gitlab
+  labels:
+    app: gitlab
+spec:
+  capacity:
+    storage: 50Gi
+  accessModes:
+    - ReadWriteMany
+  persistentVolumeReclaimPolicy: Retain
+  nfs:
+    path: /data/gitlab
+    server: 192.168.50.81
+
+---
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: gitlab
+  labels:
+    app: gitlab
+spec:
+  accessModes:
+    - "ReadWriteMany"
+  resources:
+    requests:
+      storage: "50Gi"
+  selector:
+    matchLabels:
+      app: gitlab

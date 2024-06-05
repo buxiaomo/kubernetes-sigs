@@ -1,0 +1,2 @@
+kubectl create clusterrolebinding add-on-cluster-admin --clusterrole=cluster-admin --serviceaccount=tools:default
+kubectl -n tools describe secret $(kubectl -n tools get secret | grep default | awk '{print $1}')

@@ -1,0 +1,67 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: chartmuseum
+  labels:
+    app: chartmuseum
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: chartmuseum
+  template:
+    metadata:
+      labels:
+        app: chartmuseum
+    spec:
+      volumes:
+        - name: chartmuseum-vol
+          persistentVolumeClaim:
+            claimName: platform-dev
+        # - name: chartmuseum
+        #   configMap:
+        #     defaultMode: 0755
+        #     name: chartmuseum
+      containers:
+        - name: chartmuseum
+          image: ghcr.io/helm/chartmuseum:v0.14.0
+          imagePullPolicy: Always
+          volumeMounts:
+            - name: chartmuseum-vol
+              subPath: chartmuseum-vol
+              mountPath: /charts
+          ports:
+            - name: tcp
+              containerPort: 8080
+              protocol: TCP
+          livenessProbe:
+            initialDelaySeconds: 90
+            periodSeconds: 5
+            timeoutSeconds: 5
+            httpGet:
+              path: "/helm/health"
+              port: 8080
+          readinessProbe:
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            timeoutSeconds: 5
+            httpGet:
+              path: "/helm/health"
+              port: 8080
+          env:
+            - name: TZ
+              value: "Asia/Shanghai"
+            - name: DEBUG
+              value: "1"
+            - name: STORAGE
+              value: "local"
+            - name: STORAGE_LOCAL_ROOTDIR
+              value: "/charts"
+            - name: CONTEXT_PATH
+              value: "/helm"
+            - name: BASIC_AUTH_USER
+              value: "admin"
+            - name: BASIC_AUTH_PASS
+              value: "admin123456"

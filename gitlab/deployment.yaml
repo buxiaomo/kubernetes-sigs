@@ -1,0 +1,69 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gitlab
+  labels:
+    app: gitlab
+spec:
+  replicas: 1
+  strategy: 
+    type: Recreate
+  selector:
+    matchLabels:
+      app: gitlab
+  template:
+    metadata:
+      labels:
+        app: gitlab
+    spec:
+      hostname: git
+      setHostnameAsFQDN: true
+      volumes:
+        - name: gitlab-vol
+          persistentVolumeClaim:
+            claimName: infra
+      containers:
+        - name: gitlab
+          image: gitlab/gitlab-ce:15.10.1-ce.0
+          imagePullPolicy: Always
+          volumeMounts:
+            - name: gitlab-vol
+              subPath: gitlab-vol/config
+              mountPath: /etc/gitlab
+            - name: gitlab-vol
+              subPath: gitlab-vol/logs
+              mountPath: /var/log/gitlab
+            - name: gitlab-vol
+              subPath: gitlab-vol/data
+              mountPath: /var/opt/gitlab
+          ports:
+            - name: tcp
+              containerPort: 80
+              protocol: TCP
+          # livenessProbe:
+          #   initialDelaySeconds: 30
+          #   periodSeconds: 5
+          #   timeoutSeconds: 5
+          #   tcpSocket:
+          #     port: 80
+          # readinessProbe:
+          #   initialDelaySeconds: 120
+          #   periodSeconds: 10
+          #   timeoutSeconds: 5
+          #   failureThreshold: 10
+          #   tcpSocket:
+          #     port: 80
+          env:
+            - name: TZ
+              value: "Asia/Shanghai"
+            - name: GITLAB_TIMEZONE
+              value: Beijing
+            - name: GITLAB_OMNIBUS_CONFIG
+              value: "external_url 'http://gitlab.devops.local'"
+          # resources:
+          #   limits:
+          #     cpu: "2"
+          #     memory: "2Gi"
+          #   requests:
+          #     cpu: "1"
+          #     memory: "512Mi"
