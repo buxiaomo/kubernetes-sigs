@@ -1,0 +1,17 @@
+kind: Ingress
+apiVersion: networking.k8s.io/v1
+metadata:
+  name: bamboo
+spec:
+  ingressClassName: traefik
+  rules:
+    - host: bamboo.example.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: bamboo
+                port:
+                  number: 8085

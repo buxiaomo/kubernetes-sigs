@@ -1,0 +1,17 @@
+kind: Ingress
+apiVersion: networking.k8s.io/v1
+metadata:
+  name: fisheye
+spec:
+  ingressClassName: traefik
+  rules:
+    - host: fisheye.example.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: fisheye
+                port:
+                  number: 8080

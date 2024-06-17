@@ -1,0 +1,17 @@
+kind: Ingress
+apiVersion: networking.k8s.io/v1
+metadata:
+  name: confluence
+spec:
+  ingressClassName: traefik
+  rules:
+    - host: confluence.example.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: confluence
+                port:
+                  number: 8090

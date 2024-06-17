@@ -1,0 +1,56 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: bitbucket
+  labels:
+    app: bitbucket
+spec:
+  replicas: 1
+  strategy: 
+    type: Recreate
+  selector:
+    matchLabels:
+      app: bitbucket
+  template:
+    metadata:
+      labels:
+        app: bitbucket
+    spec:
+      volumes:
+        - name: bitbucket-vol
+          persistentVolumeClaim:
+            claimName: atlassian
+      containers:
+        - name: bitbucket
+          image: atlassian/bitbucket:8.9.14
+          imagePullPolicy: Always
+          volumeMounts:
+            - name: bitbucket-vol
+              subPath: bitbucket-vol
+              mountPath: /var/atlassian/application-data/bitbucket
+          ports:
+            - name: http
+              containerPort: 8085
+              protocol: TCP
+          # livenessProbe:
+          #   initialDelaySeconds: 120
+          #   periodSeconds: 5
+          #   timeoutSeconds: 5
+          #   tcpSocket:
+          #     port: 8085
+          # readinessProbe:
+          #   initialDelaySeconds: 5
+          #   periodSeconds: 5
+          #   timeoutSeconds: 5
+          #   tcpSocket:
+          #     port: 8085
+          env:
+            - name: TZ
+              value: "Asia/Shanghai"
+          # resources:
+          #   limits:
+          #     cpu: "2"
+          #     memory: "1Gi"
+          #   requests:
+          #     cpu: "1"
+          #     memory: "512Mi"

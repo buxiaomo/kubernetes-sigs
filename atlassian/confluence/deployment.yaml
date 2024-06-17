@@ -1,0 +1,56 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: confluence
+  labels:
+    app: confluence
+spec:
+  replicas: 1
+  strategy: 
+    type: Recreate
+  selector:
+    matchLabels:
+      app: confluence
+  template:
+    metadata:
+      labels:
+        app: confluence
+    spec:
+      volumes:
+        - name: confluence-vol
+          persistentVolumeClaim:
+            claimName: atlassian
+      containers:
+        - name: confluence
+          image: atlassian/confluence:8.9-ubuntu-jdk17
+          imagePullPolicy: Always
+          volumeMounts:
+            - name: confluence-vol
+              subPath: confluence-vol
+              mountPath: /var/atlassian/application-data/confluence
+          ports:
+            - name: http
+              containerPort: 8090
+              protocol: TCP
+          livenessProbe:
+            initialDelaySeconds: 90
+            periodSeconds: 5
+            timeoutSeconds: 5
+            tcpSocket:
+              port: 8090
+          readinessProbe:
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            timeoutSeconds: 5
+            tcpSocket:
+              port: 8090
+          env:
+            - name: TZ
+              value: "Asia/Shanghai"
+          # resources:
+          #   limits:
+          #     cpu: "2"
+          #     memory: "1Gi"
+          #   requests:
+          #     cpu: "1"
+          #     memory: "512Mi"

@@ -1,0 +1,64 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: fisheye
+  labels:
+    app: fisheye
+spec:
+  replicas: 1
+  strategy: 
+    type: Recreate
+  selector:
+    matchLabels:
+      app: fisheye
+  template:
+    metadata:
+      labels:
+        app: fisheye
+    spec:
+      containers:
+        - name: fisheye
+          image: atlassian/fisheye:4.8.10
+          imagePullPolicy: Always
+          ports:
+            - name: http
+              containerPort: 8080
+              protocol: TCP
+          livenessProbe:
+            initialDelaySeconds: 90
+            periodSeconds: 5
+            timeoutSeconds: 5
+            tcpSocket:
+              port: 8080
+          readinessProbe:
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            timeoutSeconds: 5
+            tcpSocket:
+              port: 8080
+          env:
+            - name: TZ
+              value: "Asia/Shanghai"
+            - name: FISHEYE_OPTS
+              value: "-Dfecru.configure.from.env.variables=true"
+            - name: FECRU_CONFIGURE_ADMIN_PASSWORD
+              value: "ki9xe3Ei"
+            - name: FECRU_CONFIGURE_DB_TYPE
+              value: "postgresql"
+            - name: FECRU_CONFIGURE_DB_HOST
+              value: "postgresql"
+            - name: FECRU_CONFIGURE_DB_PORT
+              value: "5432"
+            - name: FECRU_CONFIGURE_DB_NAME
+              value: "fisheye"
+            - name: FECRU_CONFIGURE_DB_USER
+              value: "postgres"
+            - name: FECRU_CONFIGURE_DB_PASSWORD
+              value: "ki9xe3Ei"
+          # resources:
+          #   limits:
+          #     cpu: "2"
+          #     memory: "1Gi"
+          #   requests:
+          #     cpu: "1"
+          #     memory: "512Mi"

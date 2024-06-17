@@ -1,0 +1,56 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: crowd
+  labels:
+    app: crowd
+spec:
+  replicas: 1
+  strategy: 
+    type: Recreate
+  selector:
+    matchLabels:
+      app: crowd
+  template:
+    metadata:
+      labels:
+        app: crowd
+    spec:
+      volumes:
+        - name: crowd-vol
+          persistentVolumeClaim:
+            claimName: atlassian
+      containers:
+        - name: crowd
+          image: atlassian/crowd:5.1.2-ubuntu-jdk-11
+          imagePullPolicy: Always
+          volumeMounts:
+            - name: crowd-vol
+              subPath: crowd-vol
+              mountPath: /var/atlassian/application-data/crowd
+          ports:
+            - name: http
+              containerPort: 8095
+              protocol: TCP
+          livenessProbe:
+            initialDelaySeconds: 90
+            periodSeconds: 5
+            timeoutSeconds: 5
+            tcpSocket:
+              port: 8095
+          readinessProbe:
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            timeoutSeconds: 5
+            tcpSocket:
+              port: 8095
+          env:
+            - name: TZ
+              value: "Asia/Shanghai"
+          # resources:
+          #   limits:
+          #     cpu: "2"
+          #     memory: "1Gi"
+          #   requests:
+          #     cpu: "1"
+          #     memory: "512Mi"

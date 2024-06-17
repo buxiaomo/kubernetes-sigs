@@ -1,0 +1,56 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: bamboo
+  labels:
+    app: bamboo
+spec:
+  replicas: 1
+  strategy: 
+    type: Recreate
+  selector:
+    matchLabels:
+      app: bamboo
+  template:
+    metadata:
+      labels:
+        app: bamboo
+    spec:
+      volumes:
+        - name: bamboo-vol
+          persistentVolumeClaim:
+            claimName: atlassian
+      containers:
+        - name: bamboo
+          image: atlassian/bamboo:9.6.1-jdk11
+          imagePullPolicy: Always
+          volumeMounts:
+            - name: bamboo-vol
+              subPath: bamboo-vol
+              mountPath: /var/atlassian/application-data/bamboo
+          ports:
+            - name: http
+              containerPort: 8085
+              protocol: TCP
+          livenessProbe:
+            initialDelaySeconds: 90
+            periodSeconds: 5
+            timeoutSeconds: 5
+            tcpSocket:
+              port: 8085
+          readinessProbe:
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            timeoutSeconds: 5
+            tcpSocket:
+              port: 8085
+          env:
+            - name: TZ
+              value: "Asia/Shanghai"
+          # resources:
+          #   limits:
+          #     cpu: "2"
+          #     memory: "1Gi"
+          #   requests:
+          #     cpu: "1"
+          #     memory: "512Mi"

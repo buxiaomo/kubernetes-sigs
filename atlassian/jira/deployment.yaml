@@ -1,0 +1,60 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: jira
+  labels:
+    app: jira
+spec:
+  replicas: 1
+  strategy: 
+    type: Recreate
+  selector:
+    matchLabels:
+      app: jira
+  template:
+    metadata:
+      labels:
+        app: jira
+    spec:
+      volumes:
+        - name: jira-vol
+          persistentVolumeClaim:
+            claimName: atlassian
+        - name: jira
+          configMap:
+            defaultMode: 0755
+            name: jira
+      containers:
+        - name: jira
+          image: atlassian/jira-software:9.7.0
+          imagePullPolicy: Always
+          volumeMounts:
+            - name: jira-vol
+              subPath: jira-vol
+              mountPath: /var/atlassian/application-data/jira
+          ports:
+            - name: http
+              containerPort: 8080
+              protocol: TCP
+          livenessProbe:
+            initialDelaySeconds: 90
+            periodSeconds: 5
+            timeoutSeconds: 5
+            tcpSocket:
+              port: 8080
+          readinessProbe:
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            timeoutSeconds: 5
+            tcpSocket:
+              port: 8080
+          env:
+            - name: TZ
+              value: "Asia/Shanghai"
+          # resources:
+          #   limits:
+          #     cpu: "2"
+          #     memory: "1Gi"
+          #   requests:
+          #     cpu: "1"
+          #     memory: "512Mi"

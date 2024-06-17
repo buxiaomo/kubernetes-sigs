@@ -1,0 +1,17 @@
+kind: Ingress
+apiVersion: networking.k8s.io/v1
+metadata:
+  name: bitbucket
+spec:
+  ingressClassName: traefik
+  rules:
+    - host: bitbucket.example.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: bitbucket
+                port:
+                  number: 7990
